@@ -10,28 +10,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-// Hash table entry (slot may be filled or empty).
-typedef struct {
-    const char* key;  // key is NULL if this slot is empty
-    void* value;
-} ht_subentry;
-
-typedef struct {
-    ht_subentry* entries;  // hash slots
-    size_t capacity;       // size of _entries array
-    size_t length;         // number of items in hash table
-} ht_subtable;
-
-typedef struct {
-    ht_subtable* subtable;
-} ht_entry;
-
-typedef struct {
-    ht_entry* entries;  // hash slots
-    size_t capacity;    // size of _entries array
-    size_t length;      // number of items in hash table
-} ht;
-
 #define BUCKETS_AMNT 8192  // mirrors the amount of buckets in the futex hash table
 #define SHARED_BUCKET_INDEX (BUCKETS_AMNT - 1) // the index of the shared bucket
 
@@ -58,9 +36,27 @@ ht* ht_create(size_t capacity)
     // Allocate (zero'd) space for entry buckets.
     table->entries = calloc(table->capacity, sizeof(ht_entry));
     if (table->entries == NULL) {
+        perror("Error: Could not allocate memory\n");
         free(table); // error, free table before we return!
         return NULL;
     }
+
+    printf("Table created\n");
+    //print address of table entries
+
+    printf("Table entries: %p\n", (void*)table->entries);
+    
+    ht_entry entry = table->entries[3];
+
+    printf("%p\n", &entry);
+
+    //allocate subtables for each bucket
+
+    for(size_t i = 0; i < table->capacity - 1; i++)
+    {
+        table->entries[i].subtable = ht_subtable_create(32); //we don't need as much space, we're just hashing users to their locations in the table
+    }
+
 }
 
 ht_subtable* ht_subtable_create(size_t capacity)
@@ -85,66 +81,171 @@ ht_subtable* ht_subtable_create(size_t capacity)
 
 void ht_add_entry(ht* table, const char* key, void* value, int uid)
 {
+    printf("Adding entry\n");
+
+    size_t bucket_index = get_bucket_index((void*)key, 0);
+
+    printf("Bucket index: %zu\n", bucket_index);
+
+    printf("Debug: table = %p, bucket_index = %zu\n", (void*)table, bucket_index);
+
+    ht_entry* entry = &table->entries[bucket_index];
+
+    printf("Entry created\n");
+
+    /*if (entry->subtable == NULL)
+    {
+        printf("Creating subtable\n");
+        entry->subtable = ht_subtable_create(32); //we don't need as much space, we're just hashing users to their locations in the table
+        if(entry->subtable == NULL)
+        {
+            perror("Error: Could not allocate memory\n");
+            return; // deal with alloc failure later (TODO)
+        }
+    }*/
+
+    printf("Subtable created\n");
+
+    ht_subtable* subtable = entry->subtable;
+    size_t sub_bucket_index = uid % subtable->capacity;
+    ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
+
+    if(subtable_entry->entries == NULL)
+    {
+        subtable_entry->entries = malloc(sizeof(ht_subentry_list));
+        if(subtable_entry->entries == NULL)
+        {
+            free(subtable_entry->entries);
+            return; // deal with alloc failure later (TODO)
+        }
+
+        subtable_entry->entries->count = 0;
+        #define INIT_SUBLIST_SIZE 32 //32 for now, we will test
+        subtable_entry->entries->capacity = INIT_SUBLIST_SIZE;
+        subtable_entry->entries->items = malloc(INIT_SUBLIST_SIZE * sizeof(ht_entry_item));
+
+        if(subtable_entry->entries->items == NULL)
+        {
+            free(subtable_entry->entries);
+            return; // deal with alloc failure later (TODO)
+        }
+    }
+
+    printf("Subentry created\n");
+
+    ht_subentry_list* entry_list = subtable_entry->entries;
+
+    if(entry_list->count >= entry_list->capacity)
+    {
+        //realloc
+        entry_list->capacity *= 2;
+        ht_entry_item* new_items = realloc(entry_list->items, entry_list->capacity * sizeof(ht_entry_item));
+        if(new_items == NULL)
+        {
+            free(entry_list->items);
+            return; // deal with alloc failure later (TODO)
+        }
+        entry_list->items = new_items;
+    }
+
+    entry_list->items[entry_list->count].key = key;
+    entry_list->items[entry_list->count].value = value;
+    entry_list->count++;
+
+}
+
+ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
+{
     size_t bucket_index = get_bucket_index((void*)key, 0);
 
     ht_entry* entry = &table->entries[bucket_index];
 
     if (entry->subtable == NULL)
     {
-        entry->subtable = ht_create(32); //we don't need as much space, we're just hashing users to their locations in the table
-        if(entry->subtable == NULL)
-        {
-            return; // deal with alloc failure later (TODO)
-        }
+        perror("Error: No such entry\n");
+        free(entry);
+        return NULL;
     }
 
-    ht* subtable_hash = entry->subtable;
-    size_t sub_bucket_index = uid % subtable_hash->capacity;
-    ht_entry* subtable_entry = &subtable_hash->entries[sub_bucket_index];
+    ht_subtable* subtable = entry->subtable;
+    size_t sub_bucket_index = uid % subtable->capacity;
+    ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
 
-    if(subtable_entry->subtable == NULL)
+    if(subtable_entry->entries == NULL)
     {
-        subtable_entry->subtable = ht_subtable_create(subtable_hash->capacity);
-        if(subtable_entry->subtable == NULL)
-        {
-            return; // deal with alloc failure later (TODO)
-        }
+        perror("Error: No such entry\n");
+        free(subtable_entry);
+        return NULL;
     }
 
-    ht_subtable* subtable = subtable_entry->subtable;
-    size_t subtable_index = uid % subtable->capacity;
-    ht_subentry* subentry = &subtable->entries[subtable_index];
-    subentry-> key = key;
-    subentry->value = value;
+    ht_subentry_list* entry_list = subtable_entry->entries;
+
+    for(size_t i = 0; i < entry_list->count; i++)
+    {
+        if(strcmp(key, entry_list->items[i].key) == 0)
+        {
+            return &entry_list->items[i];
+        }
+    }
+    perror("Error: No such entry\n");
+    return NULL;
 }
 
 void ht_remove_entry(ht* table, const char* key, int uid)
 {
+    ht_entry_item* to_remove = get_entry_item(table, key, uid);
+
+    if(to_remove == NULL)
+    {
+        perror("Error: No such entry\n");
+        return;
+    }
+
     size_t bucket_index = get_bucket_index((void*)key, 0);
-
     ht_entry* entry = &table->entries[bucket_index];
-    if(entry->subtable == NULL)
-    {
-        perror("Error: No such entry\n");
-        return; // no such entry - shouldn't happen, all entries should be populated
-    }
-    ht* subtable_hash = entry->subtable;
-    size_t sub_bucket_index = uid % subtable_hash->capacity;
-    ht_entry* subtable_entry = &subtable_hash->entries[sub_bucket_index];
+    ht_subtable* subtable = entry->subtable;
+    size_t sub_bucket_index = uid % subtable->capacity;
+    ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
+    ht_subentry_list* entry_list = subtable_entry->entries;
 
-    if(subtable_entry->subtable == NULL)
+    size_t i;
+    for (i = 0; i < entry_list->count; i++)
     {
-        perror("Error: No such entry\n");
-        return; // no such entry
+        if (entry_list->items[i].key == to_remove->key)
+        {
+            break;
+        }
     }
 
-    ht_subtable* subtable = subtable_entry->subtable;
-    size_t subtable_index = uid % subtable->capacity;
-    ht_subentry* subentry = &subtable->entries[subtable_index];
+    for (size_t j = i; j < entry_list->count - 1; j++)
+    {
+        entry_list->items[j] = entry_list->items[j + 1];
+    }
+    entry_list->count--;
+
+    //if array is too large, shrink it
+
+    if(entry_list->count < entry_list->capacity / 4 && entry_list->capacity > INIT_SUBLIST_SIZE)
+    {
+        size_t new_capacity = entry_list->capacity / 2;
+        if(new_capacity < INIT_SUBLIST_SIZE)
+        {
+            new_capacity = INIT_SUBLIST_SIZE;
+        }
+        ht_entry_item* new_items = realloc(entry_list->items, new_capacity * sizeof(ht_entry_item));
+        if(new_items == NULL)
+        {
+            perror("Error: Could not reallocate memory\n");
+            return;
+        }
+        entry_list->items = new_items;
+        entry_list->capacity = new_capacity;
+
+    }
 
 }
 
-ht_subentry* get_subentry(ht* table, const char* key, int uid)
+/*void ht_remove_entry(ht* table, const char* key, int uid)
 {
     size_t bucket_index = get_bucket_index((void*)key, 0);
 
@@ -152,23 +253,20 @@ ht_subentry* get_subentry(ht* table, const char* key, int uid)
     if(entry->subtable == NULL)
     {
         perror("Error: No such entry\n");
-        return NULL; // no such entry - shouldn't happen, all entries should be populated
+        return;
     }
-    ht* subtable_hash = entry->subtable;
-    size_t sub_bucket_index = uid % subtable_hash->capacity;
-    ht_entry* subtable_entry = &subtable_hash->entries[sub_bucket_index];
+    ht_subtable* subtable = entry->subtable;
+    size_t sub_bucket_index = uid % subtable->capacity;
+    ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
 
-    if(subtable_entry->subtable == NULL)
+    if(subtable_entry->entries == NULL)
     {
         perror("Error: No such entry\n");
-        return NULL; // no such entry
+        return;
     }
 
-    ht_subtable* subtable = subtable_entry->subtable;
-    size_t subtable_index = uid % subtable->capacity;
-    ht_subentry* subentry = &subtable->entries[subtable_index];
-    return subentry;
-}
+}*/
+
 
 /*void ht_destroy(ht* table) 
 {

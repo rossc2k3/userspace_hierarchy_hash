@@ -15,10 +15,42 @@ typedef struct ht_subentry ht_subentry;*/
 
 // Hash table structure: create with ht_create, free with ht_destroy.
 
-typedef struct ht ht;
-typedef struct ht_subentry ht_subentry;
-typedef struct ht_subtable ht_subtable;
-typedef struct ht_entry ht_entry;
+// // Hash table entry (slot may be filled or empty).
+// typedef struct {
+//     const char* key;  // key is NULL if this slot is empty
+//     void* value;
+// } ht_subentry;
+
+typedef struct {
+    const char* key;
+    void* value;
+} ht_entry_item;
+
+typedef struct {
+    ht_entry_item* items;
+    size_t count;
+    size_t capacity;
+} ht_subentry_list;
+
+typedef struct {
+    ht_subentry_list* entries;
+} ht_subentry;
+
+typedef struct {
+    ht_subentry* entries;  // hash slots
+    size_t capacity;       // size of _entries array
+    size_t length;         // number of items in hash table
+} ht_subtable;
+
+typedef struct {
+    ht_subtable* subtable;
+} ht_entry;
+
+typedef struct {
+    ht_entry* entries;  // hash slots
+    size_t capacity;    // size of _entries array
+    size_t length;      // number of items in hash table
+} ht;
 
 // Create hash table and return pointer to it, or NULL if out of memory.
 ht* ht_create(size_t capacity);
@@ -43,7 +75,7 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid);
 
 void ht_remove_entry(ht* table, const char* key, int uid);
 
-ht_subentry* get_subentry(ht* table, const char* key, int uid);
+ht_entry_item* get_entry_item(ht* table, const char* key, int uid);
 
 
 

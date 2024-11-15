@@ -6,6 +6,8 @@
 //PULLED FROM RHASHTABLE REPO FOR TESTING PURPOSES - WOULD USE LINUX JHASH IN REAL PROGRAM
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -158,7 +160,7 @@ static inline u32 jhash_1word(u32 a, u32 initval)
 	return jhash_3words(a, 0, 0, initval);
 }
 
-int main(int argc, char **argv)
+/*int main(int argc, char **argv)
 {
 	int i;
 	struct {
@@ -180,4 +182,4 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
-}
+}*/

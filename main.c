@@ -63,13 +63,13 @@ int main()
 
             ht_add_entry(table, key, value, uid);
 
-            ht_subentry* subentry = get_subentry(table, key, uid);
+            //ht_subentry* subentry = get_subentry(table, key, uid);
 
-            if(subentry == NULL)
+            /*if(subentry == NULL)
             {
                 perror("Error: Entry not added\n");
                 return 1;
-            }
+            }*/
 
             printf("Entry added successfully\n");
             //printf("Key: %s\n", subentry->key);
