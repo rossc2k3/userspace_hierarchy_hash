@@ -41,21 +41,14 @@ ht* ht_create(size_t capacity)
         return NULL;
     }
 
-    printf("Table created\n");
-    //print address of table entries
-
-    printf("Table entries: %p\n", (void*)table->entries);
-    
-    ht_entry entry = table->entries[3];
-
-    printf("%p\n", &entry);
-
     //allocate subtables for each bucket
 
     for(size_t i = 0; i < table->capacity - 1; i++)
     {
         table->entries[i].subtable = ht_subtable_create(32); //we don't need as much space, we're just hashing users to their locations in the table
     }
+
+    return table;
 
 }
 
@@ -81,30 +74,12 @@ ht_subtable* ht_subtable_create(size_t capacity)
 
 void ht_add_entry(ht* table, const char* key, void* value, int uid)
 {
-    printf("Adding entry\n");
+
 
     size_t bucket_index = get_bucket_index((void*)key, 0);
 
-    printf("Bucket index: %zu\n", bucket_index);
-
-    printf("Debug: table = %p, bucket_index = %zu\n", (void*)table, bucket_index);
-
     ht_entry* entry = &table->entries[bucket_index];
 
-    printf("Entry created\n");
-
-    /*if (entry->subtable == NULL)
-    {
-        printf("Creating subtable\n");
-        entry->subtable = ht_subtable_create(32); //we don't need as much space, we're just hashing users to their locations in the table
-        if(entry->subtable == NULL)
-        {
-            perror("Error: Could not allocate memory\n");
-            return; // deal with alloc failure later (TODO)
-        }
-    }*/
-
-    printf("Subtable created\n");
 
     ht_subtable* subtable = entry->subtable;
     size_t sub_bucket_index = uid % subtable->capacity;
@@ -130,8 +105,6 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid)
             return; // deal with alloc failure later (TODO)
         }
     }
-
-    printf("Subentry created\n");
 
     ht_subentry_list* entry_list = subtable_entry->entries;
 

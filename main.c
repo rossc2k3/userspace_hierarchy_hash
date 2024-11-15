@@ -31,7 +31,7 @@ int main()
         free(table);
         return 1;
     }
-   
+
     //as a testbench, we make the presumption that the user will enter a valid command
 
     do
@@ -63,17 +63,11 @@ int main()
 
             ht_add_entry(table, key, value, uid);
 
-            //ht_subentry* subentry = get_subentry(table, key, uid);
-
-            /*if(subentry == NULL)
-            {
-                perror("Error: Entry not added\n");
-                return 1;
-            }*/
+            ht_entry_item* subentry = get_entry_item(table, key, uid);
 
             printf("Entry added successfully\n");
-            //printf("Key: %s\n", subentry->key);
-            //printf("Value: %s\n", subentry->value);
+            printf("Key: %p\n", (void*)subentry->key);
+            printf("Value: %s\n", (char*)subentry->value);
         }
 
     } while (strcmp (command, "exit") != 0);
