@@ -42,8 +42,8 @@ int main()
 
         if(strcmp(command, "add") == 0)
         {
-            char* key = (char*)malloc(10);
-            char* value = (char*)malloc(10);
+            char* key = (char*)malloc(64);
+            char* value = (char*)malloc(64);
 
             if(key == NULL || value == NULL)
             {
@@ -61,6 +61,8 @@ int main()
             printf("Enter uid: ");
             scanf("%d", &uid);
 
+            printf("uid is %d\n", uid);
+
             ht_add_entry(table, key, value, uid);
 
             ht_entry_item* subentry = get_entry_item(table, key, uid);
@@ -69,6 +71,60 @@ int main()
             printf("Key: %p\n", (void*)subentry->key);
             printf("Value: %s\n", (char*)subentry->value);
         }
+        else if(strcmp(command, "remove") == 0)
+        {
+            //doesn't work yet
+
+            char* key = (char*)malloc(64);
+
+            if(key == NULL)
+            {
+                perror("Error: Memory allocation failed\n");
+                free(key);
+                return 1;
+            }
+
+            int uid;
+
+            printf("Enter key: ");
+            scanf("%s", key);
+
+            printf("Enter uid: ");
+            scanf("%d", &uid);
+
+            int remove_code = ht_remove_entry(table, key, uid);
+
+            printf("remove code: %d\n", remove_code);
+
+            if(remove_code == -1)
+            {
+                perror("Error: Entry not found\n");
+                free(key);
+                continue;
+            }
+
+            printf("Entry removed successfully\n");
+
+        }
+        else if(strcmp(command, "print") == 0)
+        {
+            int uid;
+            size_t bucket_index;
+
+            printf("Enter uid: ");
+            scanf("%d", &uid);
+
+            
+            printf("Enter bucket index: ");
+            scanf("%lu", &bucket_index);
+
+            print_entries_in_subtable(table, uid, bucket_index);
+        }   
+        else
+        {
+            printf("Invalid command\n");
+        }
+
 
     } while (strcmp (command, "exit") != 0);
 

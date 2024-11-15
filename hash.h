@@ -73,9 +73,11 @@ ht_subtable* ht_subtable_create(size_t capacity);
 
 void ht_add_entry(ht* table, const char* key, void* value, int uid);
 
-void ht_remove_entry(ht* table, const char* key, int uid);
+int ht_remove_entry(ht* table, const char* key, int uid);
 
 ht_entry_item* get_entry_item(ht* table, const char* key, int uid);
+
+void print_entries_in_subtable(ht* table, int uid, size_t bucket_index);
 
 
 

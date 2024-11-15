@@ -78,11 +78,16 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid)
 
     size_t bucket_index = get_bucket_index((void*)key, 0);
 
+    printf("bucket_index: %lu\n", bucket_index);
+
     ht_entry* entry = &table->entries[bucket_index];
 
 
     ht_subtable* subtable = entry->subtable;
     size_t sub_bucket_index = uid % subtable->capacity;
+
+    printf("sub_bucket_index: %lu\n", sub_bucket_index);
+
     ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
 
     if(subtable_entry->entries == NULL)
@@ -135,8 +140,8 @@ ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
 
     if (entry->subtable == NULL)
     {
-        perror("Error: No such entry\n");
-        free(entry);
+        perror("Error: Could't find subtable\n");
+        free(entry->subtable);
         return NULL;
     }
 
@@ -146,8 +151,8 @@ ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
 
     if(subtable_entry->entries == NULL)
     {
-        perror("Error: No such entry\n");
-        free(subtable_entry);
+        perror("Error: Couldn't find subtable entries\n");
+        free(subtable_entry->entries);
         return NULL;
     }
 
@@ -164,14 +169,14 @@ ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
     return NULL;
 }
 
-void ht_remove_entry(ht* table, const char* key, int uid)
+int ht_remove_entry(ht* table, const char* key, int uid)
 {
     ht_entry_item* to_remove = get_entry_item(table, key, uid);
 
     if(to_remove == NULL)
     {
-        perror("Error: No such entry\n");
-        return;
+        perror("Error: Couldn't find entry to remove\n");
+        return -1;
     }
 
     size_t bucket_index = get_bucket_index((void*)key, 0);
@@ -209,13 +214,55 @@ void ht_remove_entry(ht* table, const char* key, int uid)
         if(new_items == NULL)
         {
             perror("Error: Could not reallocate memory\n");
-            return;
+            return -1;
         }
         entry_list->items = new_items;
         entry_list->capacity = new_capacity;
+    }
+}
 
+void print_entries_in_subtable(ht* table, int uid, size_t bucket_index)
+{
+    ht_entry* entry = &table->entries[bucket_index];
+
+    if (entry->subtable == NULL)
+    {
+        perror("Error: Couldn't find subtable\n");
+        free(entry->subtable);
+        return;
     }
 
+    ht_subtable* subtable = entry->subtable;
+
+    if(subtable->entries == NULL)
+    {
+        perror("Error: Couldn't find subtable entries\n");
+        free(subtable->entries);
+        return;
+    }
+
+    size_t sub_bucket_index = uid % subtable->capacity;
+    ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
+    if(subtable_entry->entries == NULL)
+    {
+        perror("Error: Couldn't find subtable entries\n");
+        free(subtable_entry->entries);
+        return;
+    }
+
+    ht_subentry_list* entry_list = subtable_entry->entries;
+
+    if(entry_list->count == 0)
+    {
+        perror("Error: No entries in subtable\n");
+        return;
+    }
+
+    for(size_t i = 0; i < entry_list->count; i++)
+    {
+        printf("Key: %p\n", (void*)entry_list->items[i].key);
+        printf("Value: %s\n", (char*)entry_list->items[i].value);
+    }
 }
 
 /*void ht_remove_entry(ht* table, const char* key, int uid)
