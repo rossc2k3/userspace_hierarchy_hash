@@ -75,22 +75,19 @@ int main()
         {
             //doesn't work yet
 
-            char* key = (char*)malloc(64);
-
-            if(key == NULL)
-            {
-                perror("Error: Memory allocation failed\n");
-                free(key);
-                return 1;
-            }
+            //char* key = malloc(64);
+            char key_str[64];
+            void* key;
 
             int uid;
 
             printf("Enter key: ");
-            scanf("%s", key);
+            scanf("%s", key_str);
 
             printf("Enter uid: ");
             scanf("%d", &uid);
+
+            sscanf(key_str, "%p", &key);
 
             int remove_code = ht_remove_entry(table, key, uid);
 
