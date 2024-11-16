@@ -7,3 +7,12 @@ A testbench to have a look at the viability of a hierarchical hash table, to be 
 Run the following:
 
 `gcc main.c hash.c jhash.c -o main`
+
+### Usage
+
+The program allows the following commands:
+
++ add: With a value and a uid, insert an entry into the table.
++ remove: With a key and a uid, remove an entry from the table.
++ print: Print a sub bucket.
++ exit
