@@ -3,13 +3,6 @@
 #include <string.h>
 #include "hash.h"
 
-struct hash_table
-{
-    int uid;
-    int value;
-    struct hash_table* next;
-};
-
 int main()
 {
     printf("Testbench for userspace hierarchical hash implementation.\n");
@@ -22,8 +15,6 @@ int main()
     printf("4. \"exit\": Exit the program.\n");
     char* command = (char*)malloc(10);
 
-    #define BUCKETS_AMNT 8192  // mirrors the amount of buckets in the futex hash table
-
     ht* table = ht_create(BUCKETS_AMNT);
     if(table == NULL)
     {
@@ -31,8 +22,6 @@ int main()
         free(table);
         return 1;
     }
-
-    //as a testbench, we make the presumption that the user will enter a valid command
 
     do
     {
@@ -73,9 +62,6 @@ int main()
         }
         else if(strcmp(command, "remove") == 0)
         {
-            //doesn't work yet
-
-            //char* key = malloc(64);
             char key_str[64];
             void* key;
 
@@ -86,6 +72,8 @@ int main()
 
             printf("Enter uid: ");
             scanf("%d", &uid);
+
+            //convert key string into pointer
 
             sscanf(key_str, "%p", &key);
 

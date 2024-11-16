@@ -10,8 +10,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-#define BUCKETS_AMNT 8192  // mirrors the amount of buckets in the futex hash table
-#define SHARED_BUCKET_INDEX (BUCKETS_AMNT - 1) // the index of the shared bucket
 
 size_t get_bucket_index(void* addr, bool shared)
 {
@@ -49,7 +47,6 @@ ht* ht_create(size_t capacity)
     }
 
     return table;
-
 }
 
 ht_subtable* ht_subtable_create(size_t capacity)
@@ -74,14 +71,11 @@ ht_subtable* ht_subtable_create(size_t capacity)
 
 void ht_add_entry(ht* table, const char* key, void* value, int uid)
 {
-
-
     size_t bucket_index = get_bucket_index((void*)key, 0);
 
     printf("bucket_index: %lu\n", bucket_index);
 
     ht_entry* entry = &table->entries[bucket_index];
-
 
     ht_subtable* subtable = entry->subtable;
     size_t sub_bucket_index = uid % subtable->capacity;
@@ -100,7 +94,6 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid)
         }
 
         subtable_entry->entries->count = 0;
-        #define INIT_SUBLIST_SIZE 32 //32 for now, we will test
         subtable_entry->entries->capacity = INIT_SUBLIST_SIZE;
         subtable_entry->entries->items = malloc(INIT_SUBLIST_SIZE * sizeof(ht_entry_item));
 
@@ -129,7 +122,6 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid)
     entry_list->items[entry_list->count].key = key;
     entry_list->items[entry_list->count].value = value;
     entry_list->count++;
-
 }
 
 ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
@@ -171,14 +163,6 @@ ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
 
 int ht_remove_entry(ht* table, const char* key, int uid)
 {
-    /*ht_entry_item* to_remove = get_entry_item(table, key, uid);
-
-    if(to_remove == NULL)
-    {
-        perror("Error: Couldn't find entry to remove\n");
-        return -1;
-    }*/
-
     size_t bucket_index = get_bucket_index((void*)key, 0);
     printf("bucket_index: %lu\n", bucket_index);
     ht_entry* entry = &table->entries[bucket_index];
@@ -186,14 +170,12 @@ int ht_remove_entry(ht* table, const char* key, int uid)
     {
         perror("Error: Couldn't find entry\n");
         free(entry);
-        return -1;
     }
     ht_subtable* subtable = entry->subtable;
     if(entry->subtable == NULL)
     {
         perror("Error: Couldn't find subtable\n");
         free(entry->subtable);
-        return -1;
     }
     size_t sub_bucket_index = uid % subtable->capacity;
     ht_subentry* subtable_entry = &subtable->entries[sub_bucket_index];
@@ -201,18 +183,13 @@ int ht_remove_entry(ht* table, const char* key, int uid)
     {
         perror("Error: Couldn't find subtable entries\n");
         free(subtable_entry->entries);
-        return -1;
     }
     ht_subentry_list* entry_list = subtable_entry->entries;
     if(subtable_entry->entries == NULL)
     {
         perror("Error: Couldn't find subtable entries\n");
         free(entry_list);
-        return -1;
     }
-    
-
-    printf("found subentry list\n");
 
     size_t i;
     for (i = 0; i < entry_list->count; i++)
@@ -229,11 +206,20 @@ int ht_remove_entry(ht* table, const char* key, int uid)
         }
     }
 
+    //shift all entries to the left to fill the gap
+
     for (size_t j = i; j < entry_list->count - 1; j++)
     {
         entry_list->items[j] = entry_list->items[j + 1];
     }
     entry_list->count--;
+
+    if(entry_list->count == 0)
+    {
+        printf("List is empty, freeing memory.");
+        free(entry_list->items);
+        free(entry_list);
+    }
 
     //if array is too large, shrink it
 
