@@ -63,7 +63,7 @@ int ht_remove_entry(ht* table, const char* key, int uid);
 
 // get an entry item from the hash table based on a key's addr and uid
 
-ht_entry_item* get_entry_item(ht* table, const char* key, int uid);
+ht_entry_item* get_entry_item(ht* table, const char* key, int uid, bool shared);
 
 // print entries at a specific bucket index in the hash table
 

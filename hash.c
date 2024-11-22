@@ -41,10 +41,11 @@ ht* ht_create(size_t capacity)
 
     //allocate subtables for each bucket
 
-    for(size_t i = 0; i < table->capacity - 1; i++)
+    for(size_t i = 0; i < table->capacity - 2; i++)
     {
         table->entries[i].subtable = ht_subtable_create(32); //we don't need as much space, we're just hashing users to their locations in the table
     }
+    table->entries[table->capacity - 1].subtable = ht_subtable_create(128); //shared bucket - 128 is a provisional number subject to testing
 
     return table;
 }
@@ -72,6 +73,8 @@ ht_subtable* ht_subtable_create(size_t capacity)
 void ht_add_entry(ht* table, const char* key, void* value, int uid, bool shared)
 {
     size_t bucket_index = get_bucket_index((void*)key, shared);
+
+    //TODO: handle logic for shared bucket. we will need to consider open addressing and tombstoning to enforce 1 entry to each bucket.
 
     printf("bucket_index: %lu\n", bucket_index);
 
@@ -124,9 +127,9 @@ void ht_add_entry(ht* table, const char* key, void* value, int uid, bool shared)
     entry_list->count++;
 }
 
-ht_entry_item* get_entry_item(ht* table, const char* key, int uid)
+ht_entry_item* get_entry_item(ht* table, const char* key, int uid, bool shared)
 {
-    size_t bucket_index = get_bucket_index((void*)key, 0);
+    size_t bucket_index = get_bucket_index((void*)key, shared);
 
     ht_entry* entry = &table->entries[bucket_index];
 
@@ -238,6 +241,7 @@ int ht_remove_entry(ht* table, const char* key, int uid)
         }
         entry_list->items = new_items;
         entry_list->capacity = new_capacity;
+        printf("Shrunk the list.\n");
     }
 }
 

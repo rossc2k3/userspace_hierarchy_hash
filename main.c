@@ -43,7 +43,7 @@ int main()
             }
 
             int uid;
-            bool shared;
+            int temp;
 
             printf("Enter value: ");
             scanf("%s", value);
@@ -54,11 +54,13 @@ int main()
             printf("uid is %d\n", uid);
 
             printf("Is it shared? 1 for yes, 0 for no. ");
-            scanf("%d", &shared);
+            scanf("%d", &temp);
+
+            bool shared = (bool)temp;
 
             ht_add_entry(table, key, value, uid, shared);
 
-            ht_entry_item* subentry = get_entry_item(table, key, uid);
+            ht_entry_item* subentry = get_entry_item(table, key, uid, shared);
 
             printf("Entry added successfully\n");
             printf("Key: %p\n", (void*)subentry->key);
