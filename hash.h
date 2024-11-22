@@ -55,7 +55,7 @@ ht_subtable* ht_subtable_create(size_t capacity);
 
 // add a value to the hash table based on a key's addr and uid
 
-void ht_add_entry(ht* table, const char* key, void* value, int uid);
+void ht_add_entry(ht* table, const char* key, void* value, int uid, bool shared);
 
 // remove a value from the hash table based on a key's addr and uid
 

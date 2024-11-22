@@ -69,9 +69,9 @@ ht_subtable* ht_subtable_create(size_t capacity)
     return subtable;
 }
 
-void ht_add_entry(ht* table, const char* key, void* value, int uid)
+void ht_add_entry(ht* table, const char* key, void* value, int uid, bool shared)
 {
-    size_t bucket_index = get_bucket_index((void*)key, 0);
+    size_t bucket_index = get_bucket_index((void*)key, shared);
 
     printf("bucket_index: %lu\n", bucket_index);
 

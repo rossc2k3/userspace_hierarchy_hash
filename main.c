@@ -43,6 +43,7 @@ int main()
             }
 
             int uid;
+            bool shared;
 
             printf("Enter value: ");
             scanf("%s", value);
@@ -52,7 +53,10 @@ int main()
 
             printf("uid is %d\n", uid);
 
-            ht_add_entry(table, key, value, uid);
+            printf("Is it shared? 1 for yes, 0 for no. ");
+            scanf("%d", &shared);
+
+            ht_add_entry(table, key, value, uid, shared);
 
             ht_entry_item* subentry = get_entry_item(table, key, uid);
 
@@ -73,7 +77,7 @@ int main()
             printf("Enter uid: ");
             scanf("%d", &uid);
 
-            //convert key string into pointer
+            //convert key string into pointer - otherwise the remove will look for the address of the key string, not the key corresponding to the address
 
             sscanf(key_str, "%p", &key);
 
