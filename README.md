@@ -8,6 +8,8 @@ Run the following:
 
 `gcc main.c hash.c jhash.c -o main`
 
+Alternatively, run `make`.
+
 ### Usage
 
 The program allows the following commands:
